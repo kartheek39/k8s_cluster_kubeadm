@@ -23,5 +23,5 @@ variable "prefix-worker-2" {
 }
 
 variable "admin-user" {
-  default = "vasudev007"
+  default = "kartheek39"
 }
