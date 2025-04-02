@@ -1,15 +1,29 @@
+# ---
+# - hosts: all
+#   become: yes
+#   vars_files:
+#     - env_variables
+#   tasks:
+# 
+#     - name: Disabling Swap on all nodes
+#       shell: swapoff -a
+# 
+#     - name: Commenting Swap entries in /etc/fstab
+#       replace:
+#         path: /etc/fstab
+#         regexp: '(^/.*swap*)'
+#         replace: '# \1'
+
+
+
 ---
 - hosts: all
   become: yes
-  vars_files:
-    - env_variables
   tasks:
 
-    - name: Disabling Swap on all nodes
+    - name: Disabling swap on all nodes
       shell: swapoff -a
 
-    - name: Commenting Swap entries in /etc/fstab
-      replace:
-        path: /etc/fstab
-        regexp: '(^/.*swap*)'
-        replace: '# \1'
+    - name: Commenting out swap entries in /etc/fstab
+      shell: sed -i '/\s*swap\s*/s/^/#/' /etc/fstab
+

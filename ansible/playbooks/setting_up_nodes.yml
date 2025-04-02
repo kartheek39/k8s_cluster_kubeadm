@@ -20,11 +20,19 @@
       become: sudo
 
     - name: Install aptitude using apt
-      apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+      apt: name=aptitude state=latest update_cache=yes force=yes
 
-    - name: Install required system packages
-      apt: name={{ item }} state=latest update_cache=yes
-      loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools']
+    - name: Install necessary system packages (aptitude, curl, etc.)
+      apt:
+        pkg:
+          - curl
+          - apt-transport-https
+          - ca-certificates
+          - software-properties-common
+          - gnupg
+        state: latest
+        update_cache: yes
+      become: yes
 
     - name: Add Docker GPG apt Key
       apt_key:
@@ -39,26 +47,84 @@
     - name: Update apt and install docker-ce
       apt: update_cache=yes name=docker-ce state=latest
 
+    - name: Add user to docker group
+      user:
+        name: "{{ ansible_user }}"  # or specify a specific username if needed
+        group: docker
+        append: yes
+
+#    - name: Configuring Systemd cgroup driver for containerd
+#      lineinfile:
+#        path: /etc/containerd/config.toml
+#        regexp: 'SystemdCgroup = false'
+#        line: 'SystemdCgroup = true'
+
+    - name: Restart Docker service to apply group changes
+      command: systemctl restart docker
+      args:
+        creates: /etc/systemd/system/docker.service
+
     - name: Update apt and install apt-transport-https
       apt: update_cache=yes name=apt-transport-https state=latest
+  
+    - name: Ensure /etc/apt/keyrings directory exists
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+      become: true
 
-    - name: Add Kubernetes GPG apt Key
-      apt_key:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        state: present
+    - name: Add Kubernetes GPG Key
+      get_url:
+         url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
+         dest: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+         mode: "0644"
+      become: true
 
-    - name: Add Kubernetes Repository
+    - name: Add Kubernetes APT repository
       apt_repository:
-        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /"
         state: present
-
-    - name: Update apt and install kubelet
+        update_cache: yes
       become: true
-      apt: update_cache=yes name=kubelet state=latest
 
-    - name: Update apt and install kubeadm
+    - name: Set correct permissions for Kubernetes keyring
+      file:
+        path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        mode: "0644"
       become: true
-      apt: update_cache=yes name=kubeadm state=latest
+
+    - name: Set correct permissions for Kubernetes repository list
+      file:
+        path: /etc/apt/sources.list.d/pkgs_k8s_io_core_stable_v1_32_deb.list
+        mode: "0644"
+      become: true
+
+#    - name: Install Kubernetes binaries
+#      apt: 
+#        name: "{{ packages }}"
+#        state: present
+#        update_cache: yes
+#      vars:
+#        packages:
+#          - kubelet 
+#          - kubeadm 
+#          - kubectl
+
+    - name: install Kubelet
+      apt:
+        name: kubelet=1.32.*
+        state: present
+        update_cache: true
+        force: yes
+      become: true
+
+    - name: Install Kubeadm
+      apt:
+        name: kubeadm=1.32.*
+        state: present
+        force: yes
+      become: true
 
 
 

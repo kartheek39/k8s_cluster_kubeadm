@@ -1,17 +1,14 @@
 [kubernetes-master-nodes]
-master-1
+master-1 ansible_host=10.0.1.6 ansible_user=kartheek39 ansible_ssh_private_key_file=~/.ssh/id_rsa
 
 [kubernetes-worker-nodes]
-worker-1
-worker-2
+worker-1 ansible_host=10.0.1.7 ansible_user=kartheek39 ansible_ssh_private_key_file=~/.ssh/id_rsa
+worker-2 ansible_host=10.0.1.5 ansible_user=kartheek39 ansible_ssh_private_key_file=~/.ssh/id_rsa
 
 [kubernetes:children]
 kubernetes-master-nodes
 kubernetes-worker-nodes
 
 [bastion]
-bastion.k8s
-
-
-
+bastion.k8s ansible_host=10.0.1.4 ansible_user=kartheek39 ansible_ssh_private_key_file=~/.ssh/id_rsa
 
